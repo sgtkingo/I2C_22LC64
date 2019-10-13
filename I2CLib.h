@@ -33,35 +33,99 @@
 
 #include <xc.h> // include processor files - each processor file is guarded.  
 
-// TODO Insert appropriate #include <>
+#define SCL PORTCbits.RC3 //SCL init as 0
+#define SDA PORTCbits.RC4 //SDA init as 0
 
-// TODO Insert C++ class definitions if appropriate
+bit i2cError; //1 ERROR, 0 OK
+    
+void waitI2C(void);
+void initI2C(void);
+void setupI2C(void);
 
-// TODO Insert declarations
+int startI2C(void);
+void stopI2C(void);
 
-// Comment a function and leverage automatic documentation with slash star star
-/**
-    <p><b>Function prototype:</b></p>
-  
-    <p><b>Summary:</b></p>
+void writeI2C(char data);
+char readI2C(void);
 
-    <p><b>Description:</b></p>
 
-    <p><b>Precondition:</b></p>
+void waitI2C(void){
+    while(!SSPIF);
+    SSPIF=0;
+}
 
-    <p><b>Parameters:</b></p>
+void initI2C(void){
+    //INTCON|=0b11000000; //int enable bits
+    //PIE1bits.SSP1IE=1; //SSP int enable
+    
+    ANSELCbits.ANSC3=0; //SCL as dig 
+    ANSELCbits.ANSC4=0; //SDA as dig
+    TRISCbits.RC3=1; //SCL as IN
+    TRISCbits.RC4=1; //SDA as IN
+    SDA=SCL=0;
+    
+    SSP1CON1=0b00100000; //Set SSPI as I2C, Master mode FOSH/4
+    SSP1CON2=0x00; //Set inter processing of I2C (ACK, Stop/Start), IMPORTANT REGISTR USABLE IN PROGRAM!!!
+    SSP1CON3=0b01101000; //INT setting for I2C, IMPORTANT REGISTR USABLE IN PROGRAM!!!
+    SSP1ADD=0b00100111; //SSP freq set to: 100 kHz
+    SSP1STAT=0x00;
+    
+    setupI2C();
+    //SSP1BUF buffer for write/read to/from I2C
+    //SSP1STAT
+}
+void setupI2C(void){
+    SSP1CON1bits.SSPEN=0;
+    if(SDA){
+       TRISCbits.RC3=0;
+       TRISCbits.RC4=0;
+       SSP1CON1bits.SSPEN=1;
+    }
+    
+}
 
-    <p><b>Returns:</b></p>
+int startI2C(void){
+    SSP1CON2bits.SEN=1; //start event
+    
+    i2cError=0;
+    for(int i=0;i<10;i++){
+        if((SDA&&SCL))SSP1CON2bits.RSEN=1; //re-start event
+        else break;
+    }
+    if((SDA&&SCL))i2cError=1;
+    return !i2cError;
+}
 
-    <p><b>Example:</b></p>
-    <code>
- 
-    </code>
+void stopI2C(void){
+    SSP1CON2bits.PEN=1; //stop event
+    
+    i2cError=0;
+    for(int i=0;i<10;i++){
+        if(!(SDA&&SCL))SSP1CON2bits.PEN=1;
+        else break;
+    }
+    if(!(SDA&&SCL))i2cError=1;
+}
 
-    <p><b>Remarks:</b></p>
- */
-// TODO Insert declarations or function prototypes (right here) to leverage 
-// live documentation
+void writeI2C(char data){
+    SSP1BUF=data; //send data
+    waitI2C();
+    i2cError=(SSP1CON2bits.ACKSTAT);//ACKSTAT=0 if ACK OK
+}
+
+char readI2C(void){
+    char data=0;
+    SSP1CON2bits.RCEN=1; //recieve
+    SSP1CON2bits.ACKDT=1; //no ACK
+    
+    waitI2C();
+    data=SSP1BUF; //read data
+    waitI2C();
+    SSP1CON2bits.ACKEN=1;//ack sequence
+    
+    return data;
+}
+
 
 #ifdef	__cplusplus
 extern "C" {

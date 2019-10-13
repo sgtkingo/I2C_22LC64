@@ -69,47 +69,90 @@
 
 #include <xc.h>
 #include "I2CLib.h"
+#include "I2CLibV2.h"
 #define _XTAL_FREQ 16000000
 
 // address_of_24LC64_in the BUS I2C, Write bit active	
-#define	a_24LC64_W 0b10100000	
+#define	ADR_24LC64_W 0b10100000	
 // address_of_24LC64_in the BUS I2C, Read bit active
-#define	a_24LC64_R  0b10100001
+#define	ADR_24LC64_R  0b10100001
 
 void Init(){
     OSCCON=0b01111100; //osc setting, 16 MHz, internal by FOSCH
-    
-    //INTCON=0b11000000; //int enable bits
-    //PIE1bits.SSP1IE=1; //SSP int enable
-    
+    //LEDs on port for show result data
     ANSELD=0;
     TRISD=0;
     
-    ANSELCbits.ANSC3=0; //SCL as dig 
-    ANSELCbits.ANSC4=0; //SDA as dig
-    TRISCbits.RC3=0; //SCL as OUT
-    TRISCbits.RC4=0; //SDA as OUT
-    PORTCbits.RC3=0; //SCL init as 0
-    PORTCbits.RC4=0; //SDA init as 0
+    //Init I2C
+    //initI2C();
     
-    SSP1CON1=0b00101000; //Set SSPI as I2C, Master mode FOSH/4
-    SSP1CON2=0b01100000; //Set inter processing of I2C (ACK, Stop/Start), IMPORTANT REGISTR USABLE IN PROGRAM!!!
-    SSP1CON3=0b01101000; //INT setting for I2C, IMPORTANT REGISTR USABLE IN PROGRAM!!!
-    SSP1ADD=0b01111111; //SCL1 pin clock period = ((ADD<7:0> + 1) *4)/FOSC FclcS=31,125 kHz
-    //SSP1BUF buffer for write/read to/from I2C
-    //SSP1IF int flag
 }
 
 void ClearDevice(){
     PORTD=0x00;
 }
 
+void WriteToDevice(char addr,char mem_H, char mem_L, char data){
+    if(!startI2C())return;
+    writeI2C(addr);
+    writeI2C(mem_H);
+    writeI2C(mem_L);
+    writeI2C(data);
+    stopI2C();
+}
+
+int ReadFromDevice(char addr,char mem_H, char mem_L){
+    int data=0;
+    if(!startI2C())return;
+    writeI2C(addr);
+    writeI2C(mem_H);
+    writeI2C(mem_L);
+            
+    if(!startI2C())return;
+    writeI2C(addr);
+    data=readI2C();
+    stopI2C();
+    
+    return data;
+}
+
 void main(void) {
     Init();
     ClearDevice();
     
-    while(1){
-    ++PORTD;
+    char mem_HB=0x00;
+    char mem_LB=0x0F;
+    char DATA=0x55;
+    
+    I2C_Init();
+    I2C_STAT();
+
+    WriteI2C(ADR_24LC64_W);
+    WriteI2C(mem_HB);
+    WriteI2C(mem_LB);
+    WriteI2C(DATA);
+    I2C_STP();
     __delay_ms(50);
+    
+    I2C_STAT();
+    WriteI2C(ADR_24LC64_W);
+    WriteI2C(mem_HB);
+    WriteI2C(mem_LB);
+    I2C_STAT();
+    WriteI2C(ADR_24LC64_W);
+    PORTD=I2CRead();
+    
+    while(1){
+    //WriteToDevice(ADR_24LC64_W,mem_HB,mem_LB,DATA);
+    __delay_ms(1000);
+     ++PORTD;
+    //PORTD=ReadFromDevice(ADR_24LC64_W,mem_HB,mem_LB);
     }
 }
+
+/*void interrupt IRS(void){
+    if(PIR1bits.SSP1IF){
+        PIR1bits.SSP1IF=0;
+    }
+
+}*/
