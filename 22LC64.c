@@ -60,13 +60,19 @@ void main(void) {
     I2C_INIT();
     I2C_CLEARBUS();
     
+    PORTD=ReadFromSlave(mem_HB,mem_LB);
+    __delay_ms(5000);
+    WriteToSlave(mem_HB,mem_LB,0xAA);
+    __delay_ms(10);
+    PORTD=0x00;
+    
     while(1){
-        if(DATA<0xFF){
+        /*if(DATA < 0xFF){
             WriteToSlave(mem_HB,mem_LB,++DATA);
             __delay_ms(10);
             PORTD=ReadFromSlave(mem_HB,mem_LB);
             __delay_ms(1000);
-        }
+        }*/
         asm("NOP");
     }
 }

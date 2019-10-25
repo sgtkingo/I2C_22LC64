@@ -100,6 +100,13 @@
 // #pragma config statements should precede project file includes.
 // Use project enums instead of #define for ON and OFF.
 
+//declared init fce
+void InitDevice();
+//declared clear fce
+void ClearDevice();
+//declared test fce
+void TestDevice();
+
 #ifdef	__cplusplus
 extern "C" {
 #endif /* __cplusplus */
