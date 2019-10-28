@@ -20,16 +20,14 @@
  */
 
 /* 
- * File:   
- * Author: 
- * Comments:
- * Revision history: 
+ * Author: Jiri Konecny
+ * Comments: I2C function header for PIC18LF46K22
  */
 
 // This is a guard condition so that contents of this file are not included
 // more than once.  
-#ifndef XC_HEADER_TEMPLATE_H
-#define	XC_HEADER_TEMPLATE_H
+#ifndef I2C_HEADER_PIC
+#define	I2C_HEADER_PIC
 
 #include <xc.h> // include processor files - each processor file is guarded.  
 
@@ -152,27 +150,5 @@ unsigned char I2CRead(char mode)
     return data;        // Data from eeprom is now in the SSPBUF so return that value
 }
 
-/*void main()
-{
- I2C_Init();
- I2C_STAT();
-
- WriteI2C(0xD0);
-    WriteI2C(0x88);
-    WriteI2C(0xFF);
-    I2C_STP();
-}/*
-
-#ifdef	__cplusplus
-extern "C" {
-#endif /* __cplusplus */
-
-    // TODO If C++ is being used, regular C code needs function names to have C 
-    // linkage so the functions can be used by the c code. 
-
-#ifdef	__cplusplus
-}
-#endif /* __cplusplus */
-
-#endif	/* XC_HEADER_TEMPLATE_H */
+#endif	/* I2C_HEADER_PIC */
 

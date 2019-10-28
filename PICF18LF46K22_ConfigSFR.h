@@ -20,10 +20,8 @@
  */
 
 /* 
- * File:   
- * Author: 
- * Comments:
- * Revision history: 
+ * Author: Jiri Konecny
+ * Comments: Config header for PIC18LF46K22
  */
 
 // This is a guard condition so that contents of this file are not included
