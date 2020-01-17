@@ -42,6 +42,8 @@
 #define MASK_W &0xFE
 #define MASK_R |0x01
 
+#define RESET_TIME 100
+
 #define SEN SSP1CON2bits.SEN
 #define PEN SSP1CON2bits.PEN
 #define RW SSP1STATbits.READ_WRITE
@@ -60,6 +62,9 @@ bit I2CError;
 void I2C_INIT();
 void I2C_STR();
 void I2C_STP();
+
+void I2C_ON();
+void I2C_OFF();
 
 void I2C_COLISION();
 void I2C_IDLE();
@@ -99,13 +104,23 @@ void I2C_INIT()
         PIE1bits.SSPIE = 1;             /* enable SSPIF interrupt */
         I2C_CLEAR();
         
-        SSP1CON1bits.SSPEN = 1;   // Enable I2C operation
-        while(!SSP1CON1bits.SSPEN)NOP();
+        I2C_ON();
         
-        I2C_PAUSE(1);
+        I2C_PAUSE(1000);
+}
+
+void I2C_ON(){
+    SSP1CON1bits.SSPEN = 1;   // Enable I2C operation
+    while(!SSP1CON1bits.SSPEN)NOP();
+}
+
+void I2C_OFF(){
+    SSP1CON1bits.SSPEN = 0;   // Enable I2C operation
+    while(SSP1CON1bits.SSPEN)NOP();    
 }
 
 void I2C_COLISION(){
+    I2C_IDLE();
     while(COLIF || BF || RW);
     SSPIF=0;
 }
@@ -114,8 +129,12 @@ void I2C_IDLE(){
     while (SEN | PEN | RW); //W8 for S or P or RW
 }
 void I2C_MSSP(){
-    while(!SSPIF);
+    char t=RESET_TIME;
+    
+    while(!SSPIF && t)t--;
     SSPIF=0;
+    
+    if(t == 0 )I2CError=true;
 }
 bit I2C_BUS_STATUS(){
     if ((SCL ^ SDA)){
@@ -133,7 +152,6 @@ void I2C_CLEAR(){
 }
 
 void I2C_STR(){
-    //I2C_CLEAR();
     I2C_COLISION();
     SEN=1;
     
@@ -142,7 +160,6 @@ void I2C_STR(){
 }
 
 void I2C_STP(){
-    //I2C_CLEAR();
     I2C_COLISION();
     PEN=1;
     
